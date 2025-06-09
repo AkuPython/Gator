@@ -1,14 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/AkuPython/Gator/internal/config"
+	"github.com/AkuPython/Gator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
-	conf config.Config
+	db *database.Queries
+	cfg *config.Config
 }
 
 type command struct {
@@ -23,10 +27,25 @@ func main() {
 		os.Exit(1)
 	}
 	
-	cState := state{conf: conf}
+	db, err := sql.Open("postgres", conf.DbURL)
+	if err != nil {
+		fmt.Println("Could not connect to DB:", err)
+		os.Exit(1)
+	}
+	
+	dbQueries := database.New(db)
+	
+	cState := state{cfg: &conf, db: dbQueries}
 	cCommands := commands{Command: make(map[string]func(*state, command) error)}
-	cCommands.register("login", handlerLogin)
 
+	// REGISTER COMMANDS
+	cCommands.register("login", handlerLogin)
+	cCommands.register("register", handlerRegister)
+	cCommands.register("reset", handlerReset)
+	cCommands.register("users", handlerGetUsers)
+
+
+	// -----------------
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: 'gator command <additional args>'")
 		os.Exit(1)
