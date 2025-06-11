@@ -167,3 +167,25 @@ func handlerCreateFeedFollow(s *state, cmd command) error {
 	return nil
 }
 
+func handlerFeedFollowsForUser(s *state, cmd command) error {
+	if len(cmd.Args) != 0 {
+		return fmt.Errorf("Only runs on current user")
+	}
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("Could not get ID of user: %v - %v", s.cfg.CurrentUserName, err)
+	}
+	
+	feedFollows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil {
+		return fmt.Errorf("Could not get feeds for user: %v from DB: %v", user.Name, err)
+	}
+	for _, follow := range feedFollows {
+		user, err := s.db.GetUserByID(context.Background(), follow.UserID)
+		if err != nil {
+			return fmt.Errorf("Could not get user ID: %v from DB: %v", follow.UserID, err)
+		}
+		fmt.Printf("Name: %v - User: %v\n", follow.Name, user.Name)
+	}
+	return nil
+}

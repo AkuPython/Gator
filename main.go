@@ -46,6 +46,8 @@ func main() {
 	cCommands.register("agg", handlerAgg)
 	cCommands.register("addfeed", handlerAddFeed)
 	cCommands.register("feeds", handlerGetFeeds)
+	cCommands.register("follow", handlerCreateFeedFollow)
+	// cCommands.register("addfeed", handlerGetFeedFollowsForUser)
 
 
 	// -----------------
