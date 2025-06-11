@@ -137,3 +137,33 @@ func handlerGetFeeds(s *state, cmd command) error {
 	}
 	return nil
 }
+
+func handlerCreateFeedFollow(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("Must provide (only) url")
+	}
+	feed, err := s.db.GetFeedByURL(context.Background(), cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("Could not get feed using URL: %v from DB: %v", cmd.Args[0], err)
+	}
+	
+	user_id, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("Could not get ID of user: %v - %v", s.cfg.CurrentUserName, err)
+	}
+	
+	feed_create, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID: user_id.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("Could not create feed follow in DB: %v", err)
+	}
+
+	fmt.Printf("Feed Name: %v - Current User: %v", feed_create.FeedName, feed_create.UserName)
+	return nil
+}
+

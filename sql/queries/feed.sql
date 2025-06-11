@@ -10,9 +10,13 @@ VALUES (
 )
 RETURNING *;
 
--- name: GetFeed :one
+-- name: GetFeedByName :one
 SELECT * FROM feeds
 WHERE name = $1;
+
+-- name: GetFeedByURL :one
+SELECT * FROM feeds
+WHERE url = $1;
 
 -- name: GetFeeds :many
 SELECT * FROM feeds;
@@ -20,7 +24,7 @@ SELECT * FROM feeds;
 -- name: DeleteFeeds :exec
 DELETE FROM feeds;
 
--- name: CreateFeedFollow :many
+-- name: CreateFeedFollow :one
 WITH inserted_feed_follows AS (
     INSERT INTO feed_follows (id, created_at, updated_at, user_id, feed_id)
     VALUES (
