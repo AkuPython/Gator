@@ -43,6 +43,9 @@ func main() {
 	cCommands.register("register", handlerRegister)
 	cCommands.register("reset", handlerReset)
 	cCommands.register("users", handlerGetUsers)
+	cCommands.register("agg", handlerAgg)
+	cCommands.register("addfeed", handlerAddFeed)
+	cCommands.register("feeds", handlerGetFeeds)
 
 
 	// -----------------

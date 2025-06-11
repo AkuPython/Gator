@@ -87,3 +87,53 @@ func handlerGetUsers(s *state, cmd command) error {
 	}
 	return nil
 }
+
+func handlerAgg(s *state, cmd command) error {
+	url := "https://www.wagslane.dev/index.xml"
+	feed, err := fetchFeed(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("Feed fetch failed - %v", err)
+	}
+	fmt.Println(feed)
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.Args) != 2 {
+		return fmt.Errorf("Must provide name & url")
+	}
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		// log.Fatalf("Must provide name & url: %v", err)
+		return fmt.Errorf("Must provide name & url: %v", err)
+	}
+	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		Name: cmd.Args[0],
+		Url: cmd.Args[1],
+		UserID: user.ID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("Could not create Feed for User:\n\t%v\n\t%v", err, user.ID)
+	}
+	fmt.Println(feed)
+	return nil
+}
+
+func handlerGetFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("Could not get feeds from DB: %v", err)
+	}
+	for _, feed := range feeds {
+		user, err := s.db.GetUserByID(context.Background(), feed.UserID)
+		if err != nil {
+			return fmt.Errorf("Could not get user ID: %v from DB: %v", feed.UserID, err)
+		}
+		fmt.Printf("Name: %v - URL: %v - Added by: %v\n", feed.Name, feed.Url, user.Name)
+	}
+	return nil
+}
