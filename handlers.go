@@ -198,3 +198,21 @@ func handlerFeedFollowsForUser(s *state, cmd command, user database.User) error 
 	}
 	return nil
 }
+
+func handlerUnfollowURL(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("Must provide URL")
+	}
+	feed, err := s.db.GetFeedByURL(context.Background(), cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("Could not get feeds for URL: %v from DB: %v", cmd.Args[0], err)
+	}
+	
+	err = s.db.DeleteFeedFollowForUser(context.Background(), database.DeleteFeedFollowForUserParams{
+		UserID: user.ID,
+		FeedID: feed.ID})
+	if err != nil {
+		return fmt.Errorf("Could not remove follow for Feed: %v - User: %v - URL: %v\n%v", feed.Name, user.Name, cmd.Args[0], err)
+	}
+	return nil
+}

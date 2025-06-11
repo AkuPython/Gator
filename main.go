@@ -48,6 +48,7 @@ func main() {
 	cCommands.register("feeds", handlerGetFeeds)
 	cCommands.register("follow", middlewareLoggedIn(handlerCreateFeedFollow))
 	cCommands.register("following", middlewareLoggedIn(handlerFeedFollowsForUser))
+	cCommands.register("unfollow", middlewareLoggedIn(handlerUnfollowURL))
 
 
 	// -----------------
