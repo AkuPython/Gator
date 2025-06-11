@@ -26,6 +26,16 @@ func (c *commands) register(name string, f func(*state, command) error) {
 	c.Command[name] = f
 }
 
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+		if err != nil {
+			return fmt.Errorf("Could not get ID of user: %v - %v", s.cfg.CurrentUserName, err)
+		}
+		return handler(s, cmd, user)
+	}
+}
+
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("Must provide (only) Username")
@@ -98,15 +108,11 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("Must provide name & url")
 	}
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		// log.Fatalf("Must provide name & url: %v", err)
-		return fmt.Errorf("Must provide name & url: %v", err)
-	}
+	
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID: uuid.New(),
 		CreatedAt: time.Now().UTC(),
@@ -150,7 +156,7 @@ func handlerGetFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerCreateFeedFollow(s *state, cmd command) error {
+func handlerCreateFeedFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("Must provide (only) url")
 	}
@@ -159,16 +165,11 @@ func handlerCreateFeedFollow(s *state, cmd command) error {
 		return fmt.Errorf("Could not get feed using URL: %v from DB: %v", cmd.Args[0], err)
 	}
 	
-	user_id, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("Could not get ID of user: %v - %v", s.cfg.CurrentUserName, err)
-	}
-	
 	feed_create, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID: uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		UserID: user_id.ID,
+		UserID: user.ID,
 		FeedID: feed.ID,
 	})
 	if err != nil {
@@ -179,13 +180,9 @@ func handlerCreateFeedFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFeedFollowsForUser(s *state, cmd command) error {
+func handlerFeedFollowsForUser(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 0 {
 		return fmt.Errorf("Only runs on current user")
-	}
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("Could not get ID of user: %v - %v", s.cfg.CurrentUserName, err)
 	}
 	
 	feedFollows, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)

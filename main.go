@@ -44,10 +44,10 @@ func main() {
 	cCommands.register("reset", handlerReset)
 	cCommands.register("users", handlerGetUsers)
 	cCommands.register("agg", handlerAgg)
-	cCommands.register("addfeed", handlerAddFeed)
+	cCommands.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	cCommands.register("feeds", handlerGetFeeds)
-	cCommands.register("follow", handlerCreateFeedFollow)
-	cCommands.register("following", handlerFeedFollowsForUser)
+	cCommands.register("follow", middlewareLoggedIn(handlerCreateFeedFollow))
+	cCommands.register("following", middlewareLoggedIn(handlerFeedFollowsForUser))
 
 
 	// -----------------
