@@ -55,68 +55,6 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 	return i, err
 }
 
-const createFeedFollow = `-- name: CreateFeedFollow :one
-WITH inserted_feed_follows AS (
-    INSERT INTO feed_follows (id, created_at, updated_at, user_id, feed_id)
-    VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5
-    )
-RETURNING id, created_at, updated_at, user_id, feed_id
-)
-SELECT
-    inserted_feed_follows.id, inserted_feed_follows.created_at, inserted_feed_follows.updated_at, inserted_feed_follows.user_id, inserted_feed_follows.feed_id,
-    feeds.name AS feed_name,
-    users.name AS user_name
-FROM inserted_feed_follows
-INNER JOIN feeds
-ON feeds.id = inserted_feed_follows.feed_id
-INNER JOIN users
-ON users.id = inserted_feed_follows.user_id
-`
-
-type CreateFeedFollowParams struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	UserID    uuid.UUID
-	FeedID    uuid.UUID
-}
-
-type CreateFeedFollowRow struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	UserID    uuid.UUID
-	FeedID    uuid.UUID
-	FeedName  string
-	UserName  string
-}
-
-func (q *Queries) CreateFeedFollow(ctx context.Context, arg CreateFeedFollowParams) (CreateFeedFollowRow, error) {
-	row := q.db.QueryRowContext(ctx, createFeedFollow,
-		arg.ID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-		arg.UserID,
-		arg.FeedID,
-	)
-	var i CreateFeedFollowRow
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.UserID,
-		&i.FeedID,
-		&i.FeedName,
-		&i.UserName,
-	)
-	return i, err
-}
-
 const deleteFeeds = `-- name: DeleteFeeds :exec
 DELETE FROM feeds
 `
@@ -162,63 +100,6 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 		&i.UserID,
 	)
 	return i, err
-}
-
-const getFeedFollowsForUser = `-- name: GetFeedFollowsForUser :many
-WITH selected_feed_follows AS (
-    SELECT id, created_at, updated_at, user_id, feed_id
-    FROM feed_follows
-    WHERE feed_follows.user_id = $1
-)
-SELECT 
-    selected_feed_follows.id, selected_feed_follows.created_at, selected_feed_follows.updated_at, selected_feed_follows.user_id, selected_feed_follows.feed_id,
-    feeds.name, users.name
-FROM selected_feed_follows
-INNER JOIN feeds
-ON feeds.id = selected_feed_follows.feed_id
-INNER JOIN users
-ON users.id = selected_feed_follows.user_id
-`
-
-type GetFeedFollowsForUserRow struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	UserID    uuid.UUID
-	FeedID    uuid.UUID
-	Name      string
-	Name_2    string
-}
-
-func (q *Queries) GetFeedFollowsForUser(ctx context.Context, userID uuid.UUID) ([]GetFeedFollowsForUserRow, error) {
-	rows, err := q.db.QueryContext(ctx, getFeedFollowsForUser, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetFeedFollowsForUserRow
-	for rows.Next() {
-		var i GetFeedFollowsForUserRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.UserID,
-			&i.FeedID,
-			&i.Name,
-			&i.Name_2,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const getFeeds = `-- name: GetFeeds :many

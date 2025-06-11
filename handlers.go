@@ -117,9 +117,21 @@ func handlerAddFeed(s *state, cmd command) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Could not create Feed for User:\n\t%v\n\t%v", err, user.ID)
+		return fmt.Errorf("Could not create Feed for User:\n\t%v\n\t%v", user.ID, err)
 	}
 	fmt.Println(feed)
+	
+	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+
+	if err != nil {
+		return fmt.Errorf("Could not create Feed Follow for User: %v, Feed: %v", user.ID, feed.ID)
+	}
 	return nil
 }
 
