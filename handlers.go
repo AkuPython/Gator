@@ -158,7 +158,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if err != nil {
 		return fmt.Errorf("Could not create Feed for User:\n\t%v\n\t%v", user.ID, err)
 	}
-	fmt.Println(feed)
+	// fmt.Println(feed)
 	
 	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID: uuid.New(),
