@@ -98,14 +98,47 @@ func handlerGetUsers(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAgg(s *state, cmd command) error {
-	url := "https://www.wagslane.dev/index.xml"
-	feed, err := fetchFeed(context.Background(), url)
+func scrapeFeeds(s *state) {
+	feed, err := s.db.GetNextFeedToFetch(context.Background())
 	if err != nil {
-		return fmt.Errorf("Feed fetch failed - %v", err)
+		fmt.Println("Could not get next feed to fetch", err)
+		return
 	}
-	fmt.Println(feed)
-	return nil
+	fmt.Println("fetching feed:", feed.Name)
+	err = s.db.MarkFeedFetched(context.Background(), feed.ID)
+	if err != nil {
+		fmt.Printf("Couldn't mark feed: %v as fetched: %v", feed.ID, err)
+		return
+	}
+		feedData, err := fetchFeed(context.Background(), feed.Url)
+	if err != nil {
+		fmt.Printf("Couldn't collect feed %s: %v", feed.Name, err)
+		return
+	}
+	for _, item := range feedData.Channel.Item {
+		fmt.Println("-", item.Title)
+	}
+}
+
+func handlerAgg(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("Must provide interval (1m, 1h, etc)")
+	}
+	scrapeInterval, err := time.ParseDuration(cmd.Args[0])
+	if err != nil {
+		return fmt.Errorf("invalid duration: %v", err)
+	}
+	if scrapeInterval < time.Duration(30 * time.Second) {
+		return fmt.Errorf("Interval too short, must be at least 30s")
+	}
+	log.Printf("Collecting feeds every %s...", scrapeInterval)
+
+	ticker := time.NewTicker(scrapeInterval)
+
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
+	// return nil
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
