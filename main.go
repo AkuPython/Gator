@@ -49,8 +49,7 @@ func main() {
 	cCommands.register("follow", middlewareLoggedIn(handlerCreateFeedFollow))
 	cCommands.register("following", middlewareLoggedIn(handlerFeedFollowsForUser))
 	cCommands.register("unfollow", middlewareLoggedIn(handlerUnfollowURL))
-	// cCommands.register("scrapeFeeds", handlerScrapeFeeds)
-
+	cCommands.register("browse", middlewareLoggedIn(handlerBrowse))
 
 	// -----------------
 	if len(os.Args) < 2 {
